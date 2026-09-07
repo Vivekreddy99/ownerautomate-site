@@ -1,0 +1,216 @@
+{
+ "name": "Ep6 - Morning Lead Digest",
+ "nodes": [
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "cronExpression",
+       "expression": "0 7 * * 1-5"
+      }
+     ]
+    }
+   },
+   "id": "d1",
+   "name": "Weekdays 7am",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    0,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s"
+    },
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Leads"
+    },
+    "options": {}
+   },
+   "id": "d2",
+   "name": "Read All Leads",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.5,
+   "position": [
+    260,
+    0
+   ],
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "sHiSaOHdDzOZoxnx",
+     "name": "Google Sheets (OwnerAutomate)"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "f1",
+       "leftValue": "={{ $json.status }}",
+       "rightValue": "Call today",
+       "operator": {
+        "type": "string",
+        "operation": "equals"
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   },
+   "id": "d3",
+   "name": "Still Waiting for a Call",
+   "type": "n8n-nodes-base.filter",
+   "typeVersion": 2.2,
+   "position": [
+    520,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "aggregate": "aggregateAllItemData",
+    "options": {}
+   },
+   "id": "d4",
+   "name": "Bundle Into One List",
+   "type": "n8n-nodes-base.aggregate",
+   "typeVersion": 1,
+   "position": [
+    780,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "m1",
+       "name": "count",
+       "value": "={{ $json.data.length }}",
+       "type": "number"
+      },
+      {
+       "id": "m2",
+       "name": "list",
+       "value": "={{ $json.data.map(l => '- ' + l.name + ' (' + l.email + ') $' + l.budget + ' - ' + l.project + ' - received ' + l.received).join('\\n') }}",
+       "type": "string"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "d5",
+   "name": "Write the Email",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    1040,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "sendTo": "hello@ownerautomate.com",
+    "subject": "=Morning leads: {{ $json.count }} to call today",
+    "emailType": "text",
+    "message": "=Morning. {{ $json.count }} lead(s) still waiting for a call:\n\n{{ $json.list }}\n\nOpen the sheet, call them, then change status to Contacted so they drop off tomorrow's list.\n\nSheet: https://docs.google.com/spreadsheets/d/1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s/edit",
+    "options": {
+     "appendAttribution": false,
+     "senderName": "Lead Digest"
+    }
+   },
+   "id": "d6",
+   "name": "Email the Owner",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [
+    1300,
+    0
+   ],
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "avT0HSTU0k73ksRU",
+     "name": "Gmail (OwnerAutomate)"
+    }
+   }
+  }
+ ],
+ "connections": {
+  "Weekdays 7am": {
+   "main": [
+    [
+     {
+      "node": "Read All Leads",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read All Leads": {
+   "main": [
+    [
+     {
+      "node": "Still Waiting for a Call",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Still Waiting for a Call": {
+   "main": [
+    [
+     {
+      "node": "Bundle Into One List",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Bundle Into One List": {
+   "main": [
+    [
+     {
+      "node": "Write the Email",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write the Email": {
+   "main": [
+    [
+     {
+      "node": "Email the Owner",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}
