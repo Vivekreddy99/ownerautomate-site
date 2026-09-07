@@ -1,0 +1,327 @@
+{
+ "name": "Ep5 - Same-Day Reply",
+ "nodes": [
+  {
+   "parameters": {
+    "formTitle": "Get a Quote",
+    "formDescription": "Tell us about your project and we'll get back to you today.",
+    "formFields": {
+     "values": [
+      {
+       "fieldLabel": "Name",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Email",
+       "fieldType": "email",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Budget",
+       "fieldType": "number",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "What do you need?",
+       "fieldType": "textarea"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "a1",
+   "name": "Quote Form",
+   "type": "n8n-nodes-base.formTrigger",
+   "typeVersion": 2.2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "ep5-quote-form"
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "s1",
+       "name": "name",
+       "value": "={{ $json.Name }}",
+       "type": "string"
+      },
+      {
+       "id": "s2",
+       "name": "email",
+       "value": "={{ $json.Email }}",
+       "type": "string"
+      },
+      {
+       "id": "s3",
+       "name": "budget",
+       "value": "={{ Number($json.Budget) }}",
+       "type": "number"
+      },
+      {
+       "id": "s5",
+       "name": "project",
+       "value": "={{ $json['What do you need?'] }}",
+       "type": "string"
+      },
+      {
+       "id": "s4",
+       "name": "received",
+       "value": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+       "type": "string"
+      },
+      {
+       "id": "s6",
+       "name": "status",
+       "value": "={{ Number($json.Budget) >= 1000 ? 'Call today' : 'Email quote' }}",
+       "type": "string"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "a2",
+   "name": "Clean Fields",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    260,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s"
+    },
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Leads"
+    },
+    "columns": {
+     "mappingMode": "autoMapInputData",
+     "value": {},
+     "matchingColumns": [],
+     "schema": []
+    },
+    "options": {}
+   },
+   "id": "a3",
+   "name": "Add Row to Sheet",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.5,
+   "position": [
+    520,
+    0
+   ],
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "sHiSaOHdDzOZoxnx",
+     "name": "Google Sheets (OwnerAutomate)"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c1",
+       "leftValue": "={{ $json.budget }}",
+       "rightValue": 1000,
+       "operator": {
+        "type": "number",
+        "operation": "gte"
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   },
+   "id": "a4",
+   "name": "Budget over $1,000?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    780,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "sendTo": "={{ $json.email }}",
+    "subject": "=We got your request, {{ $json.name }} - call coming today",
+    "emailType": "text",
+    "message": "=Hi {{ $json.name }},\n\nThanks for reaching out about: {{ $json.project }}\n\nA budget of ${{ $json.budget }} puts this at the top of our list. Someone from our team will call you today to talk it through and book a site visit.\n\nIf there is a better time to call, just reply to this email.\n\nThanks,\nThe Team",
+    "options": {
+     "appendAttribution": false,
+     "senderName": "OwnerAutomate Demo"
+    }
+   },
+   "id": "a5",
+   "name": "Email: Call Today",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [
+    1040,
+    -160
+   ],
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "avT0HSTU0k73ksRU",
+     "name": "Gmail (OwnerAutomate)"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "sendTo": "={{ $json.email }}",
+    "subject": "=Your quote is on the way, {{ $json.name }}",
+    "emailType": "text",
+    "message": "=Hi {{ $json.name }},\n\nThanks for reaching out about: {{ $json.project }}\n\nWe will put together a written quote and email it to you within 24 hours. If anything changes in the meantime, reply here and it comes straight to us.\n\nThanks,\nThe Team",
+    "options": {
+     "appendAttribution": false,
+     "senderName": "OwnerAutomate Demo"
+    }
+   },
+   "id": "a6",
+   "name": "Email: Quote Coming",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [
+    1040,
+    160
+   ],
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "avT0HSTU0k73ksRU",
+     "name": "Gmail (OwnerAutomate)"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "operation": "completion",
+    "completionTitle": "=Thanks, {{ $('Clean Fields').item.json.name }}!",
+    "completionMessage": "Check your inbox. A real person will call you today.",
+    "options": {}
+   },
+   "id": "a7",
+   "name": "Call Today",
+   "type": "n8n-nodes-base.form",
+   "typeVersion": 1,
+   "position": [
+    1300,
+    -160
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "completion",
+    "completionTitle": "=Thanks, {{ $('Clean Fields').item.json.name }}!",
+    "completionMessage": "Check your inbox. Your quote arrives within 24 hours.",
+    "options": {}
+   },
+   "id": "a8",
+   "name": "Email Quote",
+   "type": "n8n-nodes-base.form",
+   "typeVersion": 1,
+   "position": [
+    1300,
+    160
+   ]
+  }
+ ],
+ "connections": {
+  "Quote Form": {
+   "main": [
+    [
+     {
+      "node": "Clean Fields",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clean Fields": {
+   "main": [
+    [
+     {
+      "node": "Add Row to Sheet",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Add Row to Sheet": {
+   "main": [
+    [
+     {
+      "node": "Budget over $1,000?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Budget over $1,000?": {
+   "main": [
+    [
+     {
+      "node": "Email: Call Today",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Email: Quote Coming",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Email: Call Today": {
+   "main": [
+    [
+     {
+      "node": "Call Today",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Email: Quote Coming": {
+   "main": [
+    [
+     {
+      "node": "Email Quote",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}
