@@ -1,0 +1,33 @@
+{
+  "name": "Ep7 - Lead Intake (comparison demo)",
+  "nodes": [
+    {"parameters": {"formTitle": "Get a Quote", "formDescription": "Tell us about your project and we'll get back to you today.", "formFields": {"values": [
+        {"fieldLabel": "Name", "requiredField": true},
+        {"fieldLabel": "Email", "fieldType": "email", "requiredField": true},
+        {"fieldLabel": "Budget", "fieldType": "number", "requiredField": true},
+        {"fieldLabel": "What do you need?", "fieldType": "textarea"}
+      ]}, "options": {}},
+     "id": "a1", "name": "Quote Form", "type": "n8n-nodes-base.formTrigger", "typeVersion": 2.2, "position": [0, 0], "webhookId": "ep7-quote-form"},
+    {"parameters": {"assignments": {"assignments": [
+        {"id": "s1", "name": "name", "value": "={{ $json.Name }}", "type": "string"},
+        {"id": "s2", "name": "email", "value": "={{ $json.Email }}", "type": "string"},
+        {"id": "s3", "name": "budget", "value": "={{ Number($json.Budget) }}", "type": "number"},
+        {"id": "s4", "name": "received", "value": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}", "type": "string"}
+      ]}, "options": {}},
+     "id": "a2", "name": "Clean Fields", "type": "n8n-nodes-base.set", "typeVersion": 3.4, "position": [260, 0]},
+    {"parameters": {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [
+        {"id": "c1", "leftValue": "={{ $json.budget }}", "rightValue": 1000, "operator": {"type": "number", "operation": "gte"}}
+      ], "combinator": "and"}, "options": {}},
+     "id": "a3", "name": "Budget over $1,000?", "type": "n8n-nodes-base.if", "typeVersion": 2.2, "position": [520, 0]},
+    {"parameters": {"operation": "completion", "completionTitle": "=Thanks, {{ $json.name }}!", "completionMessage": "A real person will call you today.", "options": {}},
+     "id": "a4", "name": "Call Today", "type": "n8n-nodes-base.form", "typeVersion": 1, "position": [800, -140]},
+    {"parameters": {"operation": "completion", "completionTitle": "=Thanks, {{ $json.name }}!", "completionMessage": "We'll email you a quote within 24 hours.", "options": {}},
+     "id": "a5", "name": "Email Quote", "type": "n8n-nodes-base.form", "typeVersion": 1, "position": [800, 140]}
+  ],
+  "connections": {
+    "Quote Form": {"main": [[{"node": "Clean Fields", "type": "main", "index": 0}]]},
+    "Clean Fields": {"main": [[{"node": "Budget over $1,000?", "type": "main", "index": 0}]]},
+    "Budget over $1,000?": {"main": [[{"node": "Call Today", "type": "main", "index": 0}], [{"node": "Email Quote", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1"}
+}
