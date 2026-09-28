@@ -1,0 +1,507 @@
+{
+ "name": "Ep15 - Route Job Requests (IF, Switch, Filter)",
+ "nodes": [
+  {
+   "parameters": {
+    "formTitle": "Request a Plumber",
+    "formDescription": "Tell us what is going on. You get an answer on the next screen.",
+    "formFields": {
+     "values": [
+      {
+       "fieldLabel": "Your name",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Phone",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Zip code",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "What is the problem?",
+       "requiredField": true
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "r1",
+   "name": "Job Request",
+   "type": "n8n-nodes-base.formTrigger",
+   "typeVersion": 2.2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "ep15-job-request"
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "c1",
+       "name": "name",
+       "value": "={{ $json['Your name'].trim() }}",
+       "type": "string"
+      },
+      {
+       "id": "c2",
+       "name": "phone",
+       "value": "={{ $json.Phone }}",
+       "type": "string"
+      },
+      {
+       "id": "c3",
+       "name": "zip",
+       "value": "={{ String($json['Zip code']).trim() }}",
+       "type": "string"
+      },
+      {
+       "id": "c4",
+       "name": "problem",
+       "value": "={{ $json['What is the problem?'].toLowerCase() }}",
+       "type": "string"
+      },
+      {
+       "id": "c5",
+       "name": "received",
+       "value": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}",
+       "type": "string"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "r2",
+   "name": "Clean Up",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    240,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": false,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "f1",
+       "leftValue": "={{ $json.zip }}",
+       "rightValue": "217",
+       "operator": {
+        "type": "string",
+        "operation": "startsWith"
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   },
+   "id": "r3",
+   "name": "In Service Area",
+   "type": "n8n-nodes-base.filter",
+   "typeVersion": 2.2,
+   "position": [
+    480,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": false,
+      "leftValue": "",
+      "typeValidation": "strict",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "i1",
+       "leftValue": "={{ $json.problem }}",
+       "rightValue": "leak|burst|flood|no water",
+       "operator": {
+        "type": "string",
+        "operation": "regex"
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   },
+   "id": "r4",
+   "name": "Emergency?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    720,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "rules": {
+     "values": [
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": false,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "w1",
+          "leftValue": "={{ $json.problem }}",
+          "rightValue": "hot water|water heater",
+          "operator": {
+           "type": "string",
+           "operation": "regex"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Water heater"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": false,
+         "leftValue": "",
+         "typeValidation": "strict",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "w2",
+          "leftValue": "={{ $json.problem }}",
+          "rightValue": "drain|clog|backed up",
+          "operator": {
+           "type": "string",
+           "operation": "regex"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "Drain"
+      }
+     ]
+    },
+    "options": {
+     "fallbackOutput": "extra",
+     "renameFallbackOutput": "Everything else"
+    }
+   },
+   "id": "r5",
+   "name": "Which Desk?",
+   "type": "n8n-nodes-base.switch",
+   "typeVersion": 3.2,
+   "position": [
+    960,
+    140
+   ]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "r6a",
+       "name": "route",
+       "value": "Emergency",
+       "type": "string"
+      },
+      {
+       "id": "r6b",
+       "name": "headline",
+       "value": "=Emergency logged, {{ $json.name }}",
+       "type": "string"
+      },
+      {
+       "id": "r6c",
+       "name": "message",
+       "value": "=Our on-call plumber calls {{ $json.phone }} within 10 minutes. If you can, shut off the main water valve now.",
+       "type": "string"
+      }
+     ]
+    },
+    "includeOtherFields": true,
+    "options": {}
+   },
+   "id": "r6",
+   "name": "Emergency Lane",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    1240,
+    -160
+   ]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "r7a",
+       "name": "route",
+       "value": "Water heater",
+       "type": "string"
+      },
+      {
+       "id": "r7b",
+       "name": "headline",
+       "value": "=Water heater request in, {{ $json.name }}",
+       "type": "string"
+      },
+      {
+       "id": "r7c",
+       "name": "message",
+       "value": "=Our install team texts {{ $json.phone }} a price range today, before 5 pm.",
+       "type": "string"
+      }
+     ]
+    },
+    "includeOtherFields": true,
+    "options": {}
+   },
+   "id": "r7",
+   "name": "Water Heater Desk",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    1240,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "r8a",
+       "name": "route",
+       "value": "Drain",
+       "type": "string"
+      },
+      {
+       "id": "r8b",
+       "name": "headline",
+       "value": "=Drain job booked in, {{ $json.name }}",
+       "type": "string"
+      },
+      {
+       "id": "r8c",
+       "name": "message",
+       "value": "=We text {{ $json.phone }} the next two open time slots within the hour.",
+       "type": "string"
+      }
+     ]
+    },
+    "includeOtherFields": true,
+    "options": {}
+   },
+   "id": "r8",
+   "name": "Drain Desk",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    1240,
+    160
+   ]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "r9a",
+       "name": "route",
+       "value": "Office",
+       "type": "string"
+      },
+      {
+       "id": "r9b",
+       "name": "headline",
+       "value": "=Thanks {{ $json.name }}, we have it",
+       "type": "string"
+      },
+      {
+       "id": "r9c",
+       "name": "message",
+       "value": "=The office calls {{ $json.phone }} back by noon tomorrow.",
+       "type": "string"
+      }
+     ]
+    },
+    "includeOtherFields": true,
+    "options": {}
+   },
+   "id": "r9",
+   "name": "Office Callback",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    1240,
+    320
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "completion",
+    "completionTitle": "={{ $json.headline }}",
+    "completionMessage": "={{ $json.message }}",
+    "options": {}
+   },
+   "id": "r10",
+   "name": "Answer Customer",
+   "type": "n8n-nodes-base.form",
+   "typeVersion": 1,
+   "position": [
+    1520,
+    80
+   ]
+  }
+ ],
+ "connections": {
+  "In Service Area": {
+   "main": [
+    [
+     {
+      "node": "Emergency?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Emergency?": {
+   "main": [
+    [
+     {
+      "node": "Emergency Lane",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Which Desk?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Which Desk?": {
+   "main": [
+    [
+     {
+      "node": "Water Heater Desk",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Drain Desk",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Office Callback",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Job Request": {
+   "main": [
+    [
+     {
+      "node": "Clean Up",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clean Up": {
+   "main": [
+    [
+     {
+      "node": "In Service Area",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Emergency Lane": {
+   "main": [
+    [
+     {
+      "node": "Answer Customer",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Water Heater Desk": {
+   "main": [
+    [
+     {
+      "node": "Answer Customer",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Drain Desk": {
+   "main": [
+    [
+     {
+      "node": "Answer Customer",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Office Callback": {
+   "main": [
+    [
+     {
+      "node": "Answer Customer",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}
