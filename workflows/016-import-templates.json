@@ -1,0 +1,225 @@
+{
+ "name": "Ep16 - Cleaning Quote Template",
+ "nodes": [
+  {
+   "parameters": {
+    "formTitle": "Get Your Cleaning Price",
+    "formDescription": "Two questions. Your price shows on the next screen.",
+    "formFields": {
+     "values": [
+      {
+       "fieldLabel": "Your name",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Email",
+       "fieldType": "email",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Bedrooms",
+       "fieldType": "number",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Bathrooms",
+       "fieldType": "number",
+       "requiredField": true
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "q1",
+   "name": "Quote Form",
+   "type": "n8n-nodes-base.formTrigger",
+   "typeVersion": 2.2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "ep16-cleaning-quote"
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "p1",
+       "name": "business",
+       "value": "Sparkle Clean Frederick",
+       "type": "string"
+      },
+      {
+       "id": "p2",
+       "name": "owner_email",
+       "value": "hello@ownerautomate.com",
+       "type": "string"
+      },
+      {
+       "id": "p3",
+       "name": "base_price",
+       "value": 60,
+       "type": "number"
+      },
+      {
+       "id": "p4",
+       "name": "per_bedroom",
+       "value": 25,
+       "type": "number"
+      },
+      {
+       "id": "p5",
+       "name": "per_bathroom",
+       "value": 20,
+       "type": "number"
+      }
+     ]
+    },
+    "includeOtherFields": true,
+    "options": {}
+   },
+   "id": "q2",
+   "name": "Your Prices",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    240,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "w1",
+       "name": "name",
+       "value": "={{ $json['Your name'].trim() }}",
+       "type": "string"
+      },
+      {
+       "id": "w2",
+       "name": "email",
+       "value": "={{ $json.Email }}",
+       "type": "string"
+      },
+      {
+       "id": "w3",
+       "name": "rooms",
+       "value": "={{ $json.Bedrooms }} bed, {{ $json.Bathrooms }} bath",
+       "type": "string"
+      },
+      {
+       "id": "w4",
+       "name": "price",
+       "value": "={{ $json.base_price + $json.per_bedroom * Number($json.Bedrooms) + $json.per_bathroom * Number($json.Bathrooms) }}",
+       "type": "number"
+      }
+     ]
+    },
+    "includeOtherFields": true,
+    "options": {}
+   },
+   "id": "q3",
+   "name": "Work Out Price",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    480,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "sendTo": "={{ $json.owner_email }}",
+    "subject": "=New quote: {{ $json.name }}, {{ $json.rooms }}, ${{ $json.price }}",
+    "emailType": "text",
+    "message": "=New price request from the website.\n\nName: {{ $json.name }}\nEmail: {{ $json.email }}\nHome: {{ $json.rooms }}\nPrice shown: ${{ $json.price }}\n\nReply to book a time.",
+    "options": {
+     "appendAttribution": false,
+     "senderName": "OwnerAutomate Demo"
+    }
+   },
+   "id": "q4",
+   "name": "Email the Owner",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [
+    720,
+    0
+   ],
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "avT0HSTU0k73ksRU",
+     "name": "Gmail (OwnerAutomate)"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "operation": "completion",
+    "completionTitle": "=Your price: ${{ $('Work Out Price').item.json.price }} per clean",
+    "completionMessage": "=Thanks {{ $('Work Out Price').item.json.name }}. That is for {{ $('Work Out Price').item.json.rooms }}. {{ $('Work Out Price').item.json.business }} will email you to pick a time.",
+    "options": {}
+   },
+   "id": "q5",
+   "name": "Show the Price",
+   "type": "n8n-nodes-base.form",
+   "typeVersion": 1,
+   "position": [
+    960,
+    0
+   ]
+  }
+ ],
+ "connections": {
+  "Quote Form": {
+   "main": [
+    [
+     {
+      "node": "Your Prices",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Your Prices": {
+   "main": [
+    [
+     {
+      "node": "Work Out Price",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Work Out Price": {
+   "main": [
+    [
+     {
+      "node": "Email the Owner",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Email the Owner": {
+   "main": [
+    [
+     {
+      "node": "Show the Price",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}
