@@ -1,0 +1,35 @@
+{
+ "name": "OA 021 - AIHOT verdict",
+ "nodes": [
+  {
+   "parameters": {},
+   "id": "a21-trigger",
+   "name": "Run",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [0, 0]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {"id": "v1", "name": "tool", "value": "AIHOT (github.com/KKKKhazix/AIHOT)", "type": "string"},
+      {"id": "v2", "name": "verdict", "value": "Worth it if you sell know-how in one niche and have a technical helper for an afternoon. If you only want to read the news, keep Google Alerts.", "type": "string"},
+      {"id": "v3", "name": "cost", "value": "Code free (MIT). You pay the model calls; paid collectors are off by default.", "type": "string"},
+      {"id": "v4", "name": "push_items_from_n8n", "value": "POST /api/ingest/items with Authorization: Bearer INGEST_TOKEN, max 50 items per call", "type": "string"}
+     ]
+    },
+    "options": {}
+   },
+   "id": "a21-verdict",
+   "name": "Verdict",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [260, 0]
+  }
+ ],
+ "connections": {
+  "Run": {"main": [[{"node": "Verdict", "type": "main", "index": 0}]]}
+ },
+ "settings": {"executionOrder": "v1"}
+}
