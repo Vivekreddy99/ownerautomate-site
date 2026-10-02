@@ -1,0 +1,297 @@
+{
+ "name": "Ep18 - Appointment Reminders (Loop Over Items)",
+ "nodes": [
+  {
+   "parameters": {
+    "formTitle": "Tomorrow's Reminders",
+    "formDescription": "Bright Nest Cleaning. Sends every customer booked tomorrow their own reminder.",
+    "formFields": {
+     "values": [
+      {
+       "fieldLabel": "Sent by",
+       "requiredField": true
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "f1",
+   "name": "Send Reminders",
+   "type": "n8n-nodes-base.formTrigger",
+   "typeVersion": 2.2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "ep18-reminders"
+  },
+  {
+   "parameters": {
+    "jsCode": "const day = $now.plus({ days: 1 }).toFormat('cccc, LLLL d');\nconst jobs = [\n  { customer: 'Maria Lopez',   time: '8:00 am',  address: '412 Rosemont Ave',  crew: 'Ana and Jess', job: 'Deep clean, 3 bed' },\n  { customer: 'Tom Becker',    time: '9:30 am',  address: '18 Bentz St',       crew: 'Luis and Kim', job: 'Standard clean' },\n  { customer: 'Priya Shah',    time: '11:00 am', address: '2205 Ballenger Dr', crew: 'Ana and Jess', job: 'Move-out clean' },\n  { customer: 'Dave Holloway', time: '1:30 pm',  address: '77 Carroll Pkwy',   crew: 'Luis and Kim', job: 'Standard clean' },\n  { customer: 'Grace Kim',     time: '3:00 pm',  address: '940 Baughmans Ln',  crew: 'Ana and Jess', job: 'Kitchen and baths' },\n];\n// Demo: every reminder goes to the channel inbox. In your business this list comes from your sheet or calendar.\nreturn jobs.map(j => ({ json: { ...j, day, email: 'hello@ownerautomate.com' } }));"
+   },
+   "id": "j1",
+   "name": "Tomorrow's Jobs",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    240,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "batchSize": 1,
+    "options": {}
+   },
+   "id": "l1",
+   "name": "Loop Over Items",
+   "type": "n8n-nodes-base.splitInBatches",
+   "typeVersion": 3,
+   "position": [
+    480,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "w10",
+       "name": "subject",
+       "value": "=Reminder: your cleaning is tomorrow at {{ $json.time }}",
+       "type": "string"
+      },
+      {
+       "id": "w11",
+       "name": "body",
+       "value": "=Hi {{ $json.customer.split(' ')[0] }},\n\nQuick reminder: {{ $json.crew }} will be at {{ $json.address }} on {{ $json.day }} at {{ $json.time }} for your {{ $json.job.toLowerCase() }}.\n\nNeed to move it? Just reply to this email before 6 pm today.\n\nThanks,\nBright Nest Cleaning, Frederick",
+       "type": "string"
+      }
+     ]
+    },
+    "options": {},
+    "includeOtherFields": true
+   },
+   "id": "w1",
+   "name": "Write Reminder",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    760,
+    160
+   ]
+  },
+  {
+   "parameters": {
+    "sendTo": "={{ $json.email }}",
+    "subject": "={{ $json.subject }}",
+    "emailType": "text",
+    "message": "={{ $json.body }}",
+    "options": {
+     "appendAttribution": false,
+     "senderName": "Bright Nest Cleaning (demo)"
+    }
+   },
+   "id": "g1",
+   "name": "Send Reminder",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [
+    1000,
+    160
+   ],
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "avT0HSTU0k73ksRU",
+     "name": "Gmail (OwnerAutomate)"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "m10",
+       "name": "customer",
+       "value": "={{ $('Write Reminder').item.json.customer }}",
+       "type": "string"
+      },
+      {
+       "id": "m11",
+       "name": "time",
+       "value": "={{ $('Write Reminder').item.json.time }}",
+       "type": "string"
+      },
+      {
+       "id": "m12",
+       "name": "crew",
+       "value": "={{ $('Write Reminder').item.json.crew }}",
+       "type": "string"
+      },
+      {
+       "id": "m13",
+       "name": "sent_at",
+       "value": "={{ $now.toFormat('h:mm:ss a') }}",
+       "type": "string"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "m1",
+   "name": "Mark Sent",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    1240,
+    160
+   ]
+  },
+  {
+   "parameters": {
+    "amount": 2,
+    "unit": "seconds"
+   },
+   "id": "p1",
+   "name": "Pause 2 Seconds",
+   "type": "n8n-nodes-base.wait",
+   "typeVersion": 1.1,
+   "position": [
+    1480,
+    160
+   ],
+   "webhookId": "ep18-pause-1"
+  },
+  {
+   "parameters": {
+    "jsCode": "const sent = $input.all().map(i => i.json);\nconst lines = sent.map(s => `${s.time}  ${s.customer}  (${s.crew})  sent ${s.sent_at}`);\nreturn [{ json: { count: sent.length, headline: `${sent.length} reminders sent for tomorrow`, message: lines.join('\\n') } }];"
+   },
+   "id": "s1",
+   "name": "Build Summary",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    760,
+    -160
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "completion",
+    "completionTitle": "={{ $json.headline }}",
+    "completionMessage": "={{ $json.message }}",
+    "options": {}
+   },
+   "id": "d1",
+   "name": "Show Summary",
+   "type": "n8n-nodes-base.form",
+   "typeVersion": 1,
+   "position": [
+    1000,
+    -160
+   ]
+  }
+ ],
+ "connections": {
+  "Send Reminders": {
+   "main": [
+    [
+     {
+      "node": "Tomorrow's Jobs",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Tomorrow's Jobs": {
+   "main": [
+    [
+     {
+      "node": "Loop Over Items",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Loop Over Items": {
+   "main": [
+    [
+     {
+      "node": "Build Summary",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Write Reminder",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Write Reminder": {
+   "main": [
+    [
+     {
+      "node": "Send Reminder",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Send Reminder": {
+   "main": [
+    [
+     {
+      "node": "Mark Sent",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Mark Sent": {
+   "main": [
+    [
+     {
+      "node": "Pause 2 Seconds",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Pause 2 Seconds": {
+   "main": [
+    [
+     {
+      "node": "Loop Over Items",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Build Summary": {
+   "main": [
+    [
+     {
+      "node": "Show Summary",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}

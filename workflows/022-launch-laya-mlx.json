@@ -1,0 +1,35 @@
+{
+ "name": "OA 022 - laya-mlx verdict",
+ "nodes": [
+  {
+   "parameters": {},
+   "id": "a22-trigger",
+   "name": "Run",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [0, 0]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {"id": "v1", "name": "tool", "value": "laya-mlx (github.com/mizorewww/laya-mlx)", "type": "string"},
+      {"id": "v2", "name": "verdict", "value": "Not yet for most owners: keep the classifier you have. Yes if a Mac already runs in your office and you have a developer: free, private, millisecond email sorting.", "type": "string"},
+      {"id": "v3", "name": "cost", "value": "Code free (Apache-2.0), models free on Hugging Face (check each model card license), no per-message fee. Needs an Apple Silicon Mac, macOS 14+, Python 3.11+.", "type": "string"},
+      {"id": "v4", "name": "install", "value": "pip install laya-mlx", "type": "string"}
+     ]
+    },
+    "options": {}
+   },
+   "id": "a22-verdict",
+   "name": "Verdict",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [260, 0]
+  }
+ ],
+ "connections": {
+  "Run": {"main": [[{"node": "Verdict", "type": "main", "index": 0}]]}
+ },
+ "settings": {"executionOrder": "v1"}
+}
