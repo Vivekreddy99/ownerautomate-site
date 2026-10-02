@@ -1,0 +1,119 @@
+{
+ "name": "Ep19 - Instant Lawn Quote (Code node)",
+ "nodes": [
+  {
+   "parameters": {
+    "formTitle": "Get an Instant Lawn Quote",
+    "formDescription": "Green Acre Lawn Care, Frederick MD. Weekly mowing, priced in seconds.",
+    "formFields": {
+     "values": [
+      {
+       "fieldLabel": "Name",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Phone",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Lawn size (sq ft)",
+       "requiredField": true
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "f1",
+   "name": "Quote Request",
+   "type": "n8n-nodes-base.formTrigger",
+   "typeVersion": 2.2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "ep19-quote"
+  },
+  {
+   "parameters": {
+    "mode": "runOnceForEachItem",
+    "jsCode": "// 1. Grab what the customer typed (names match the left panel)\nconst name  = $json['Name'] || '';\nconst phone = $json['Phone'] || '';\nconst size  = $json['Lawn size (sq ft)'] || '';\n\n// 2. Fix capitals: \"mike o'brien\" becomes \"Mike O'Brien\"\nconst cleanName = name.trim().toLowerCase().replace(/\\s+/g, ' ')\n  .replace(/(^|[\\s'-])\\S/g, c => c.toUpperCase());\n\n// 3. Keep the digits, then format: (301) 555-0142\nconst d = phone.replace(/\\D/g, '').slice(-10);\nconst cleanPhone = d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : phone;\n\n// 4. Turn \"6,500 sq ft\" into the number 6500\nconst sqft = Number(String(size).replace(/[^0-9.]/g, '')) || 0;\n\n// 5. Hand the clean fields to the next node\nreturn { json: { name: cleanName, phone: cleanPhone, sqft } };"
+   },
+   "id": "c1",
+   "name": "Clean Up",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    240,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "mode": "runOnceForEachItem",
+    "jsCode": "// Your prices: the only two numbers you change\nconst basePerMow = 45;   // dollars per visit\nconst per1000    = 4;    // extra dollars per 1,000 sq ft\n\nconst perMow = Math.round(basePerMow + ($json.sqft / 1000) * per1000);\nconst season = perMow * 26;   // weekly mows, April to September\n\n// Keep everything from Clean Up, add the price\nreturn { json: { ...$json, perMow, season, seasonText: '$' + season.toLocaleString('en-US') } };"
+   },
+   "id": "p1",
+   "name": "Price Quote",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    480,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "completion",
+    "completionTitle": "={{ $json.name }}, your estimate: ${{ $json.perMow }} per mow",
+    "completionMessage": "=Weekly season, 26 mows: {{ $json.seasonText }}\nLawn: {{ $json.sqft.toLocaleString('en-US') }} sq ft\nWe will text {{ $json.phone }} to pick a start date.\n\nGreen Acre Lawn Care",
+    "options": {}
+   },
+   "id": "q1",
+   "name": "Quote Page",
+   "type": "n8n-nodes-base.form",
+   "typeVersion": 1,
+   "position": [
+    720,
+    0
+   ]
+  }
+ ],
+ "connections": {
+  "Quote Request": {
+   "main": [
+    [
+     {
+      "node": "Clean Up",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clean Up": {
+   "main": [
+    [
+     {
+      "node": "Price Quote",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Price Quote": {
+   "main": [
+    [
+     {
+      "node": "Quote Page",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}
