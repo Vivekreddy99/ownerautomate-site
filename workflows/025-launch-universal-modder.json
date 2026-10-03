@@ -1,0 +1,35 @@
+{
+ "name": "OA 025 - universal-modder verdict",
+ "nodes": [
+  {
+   "parameters": {},
+   "id": "a25-trigger",
+   "name": "Run",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [0, 0]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {"id": "v1", "name": "tool", "value": "universal-modder (github.com/rehan-remade/universal-modder)", "type": "string"},
+      {"id": "v2", "name": "verdict", "value": "Use it if you run a small game studio, a modding channel or sell showcase videos. Everyone else: do not install it, steal the idea (written skills plus a notes folder your agent reads first and writes last).", "type": "string"},
+      {"id": "v3", "name": "cost", "value": "Kit free (MIT). You pay for your AI agent plan and per-generation fal art/3D/audio. Single-player games you own only.", "type": "string"},
+      {"id": "v4", "name": "install", "value": "Claude Code: /plugin marketplace add rehan-remade/universal-modder, then /plugin install universal-modder@universal-modder", "type": "string"}
+     ]
+    },
+    "options": {}
+   },
+   "id": "a25-verdict",
+   "name": "Verdict",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [260, 0]
+  }
+ ],
+ "connections": {
+  "Run": {"main": [[{"node": "Verdict", "type": "main", "index": 0}]]}
+ },
+ "settings": {"executionOrder": "v1"}
+}
