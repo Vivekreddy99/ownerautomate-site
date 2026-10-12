@@ -1,0 +1,35 @@
+{
+ "name": "OA 029 - CADCraft verdict",
+ "nodes": [
+  {
+   "parameters": {},
+   "id": "a29-trigger",
+   "name": "Run",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [0, 0]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {"id": "v1", "name": "tool", "value": "CADCraft (github.com/storytold/cadcraft)", "type": "string"},
+      {"id": "v2", "name": "verdict", "value": "Install it free as a DWG/DXF viewer, PDF plotter and quick 2D drafting tool. Keep AutoCAD (or the original file) for client drawings: saving changes every release, and the README and v0.6.2 notes disagree on what a save keeps.", "type": "string"},
+      {"id": "v3", "name": "cost", "value": "Free. MIT or Apache-2.0, no account, no subscription (README).", "type": "string"},
+      {"id": "v4", "name": "install", "value": "github.com/storytold/cadcraft/releases/latest: Windows .msi or portable .zip, macOS .dmg, Linux AppImage/.deb/.rpm/Flatpak/tarball, FreeBSD tarball, web build zip.", "type": "string"}
+     ]
+    },
+    "options": {}
+   },
+   "id": "a29-verdict",
+   "name": "Verdict",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [260, 0]
+  }
+ ],
+ "connections": {
+  "Run": {"main": [[{"node": "Verdict", "type": "main", "index": 0}]]}
+ },
+ "settings": {"executionOrder": "v1"}
+}
