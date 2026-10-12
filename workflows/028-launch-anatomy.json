@@ -1,0 +1,35 @@
+{
+ "name": "OA 028 - Anatomy verdict",
+ "nodes": [
+  {
+   "parameters": {},
+   "id": "a28-trigger",
+   "name": "Run",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [0, 0]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {"id": "v1", "name": "tool", "value": "Anatomy (github.com/wheresryan22/anatomy)", "type": "string"},
+      {"id": "v2", "name": "verdict", "value": "Free, impressive, slow. Worth one hero figure on your landing page if customers struggle to picture what you sell; skip it for charts, quick graphics or a tight usage cap.", "type": "string"},
+      {"id": "v3", "name": "cost", "value": "Skill free (MIT), no API keys. You pay in agent time: the maker reports 1 h 54 min to 14 h per figure.", "type": "string"},
+      {"id": "v4", "name": "install", "value": "npx skills add wheresryan22/anatomy -g -a claude-code (Node 22.20+), or git clone into ~/.claude/skills/anatomy", "type": "string"}
+     ]
+    },
+    "options": {}
+   },
+   "id": "a28-verdict",
+   "name": "Verdict",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [260, 0]
+  }
+ ],
+ "connections": {
+  "Run": {"main": [[{"node": "Verdict", "type": "main", "index": 0}]]}
+ },
+ "settings": {"executionOrder": "v1"}
+}
