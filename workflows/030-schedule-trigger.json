@@ -1,0 +1,132 @@
+{
+ "name": "Ep30 - Morning Job List (Weekdays 7am)",
+ "nodes": [
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "cronExpression",
+       "expression": "0 7 * * 1-5"
+      }
+     ]
+    }
+   },
+   "id": "s1",
+   "name": "Weekdays 7am",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    0,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s"
+    },
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Jobs"
+    },
+    "options": {}
+   },
+   "id": "s2",
+   "name": "Read Jobs",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.5,
+   "position": [
+    260,
+    0
+   ],
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "sHiSaOHdDzOZoxnx",
+     "name": "Google Sheets (OwnerAutomate)"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "jsCode": "// Today's date in the workflow's timezone (menu > Settings > Timezone)\nconst today = $now.toFormat('yyyy-MM-dd');\n\n// Keep today's jobs, drop cancelled ones, earliest first\nconst jobs = $input.all().map(i => i.json)\n  .filter(j => String(j.date) === today && j.status !== 'Cancelled')\n  .sort((a, b) => String(a.time).localeCompare(String(b.time)));\n\n// One line per job: time, customer, address, job, tech\nconst lines = jobs.map(j => `${j.time}  ${j.customer}, ${j.address} - ${j.job} (${j.tech})`);\n\nreturn [{ json: {\n  count: jobs.length,\n  first: jobs.length ? jobs[0].time : 'none',\n  day: $now.toFormat('cccc d LLLL'),\n  list: lines.join('\\n') || 'No jobs booked today.'\n} }];"
+   },
+   "id": "s3",
+   "name": "Today's Jobs",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    520,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "sendTo": "hello@ownerautomate.com",
+    "subject": "=Today: {{ $json.count }} jobs, first at {{ $json.first }}",
+    "emailType": "text",
+    "message": "=Good morning. {{ $json.day }}: {{ $json.count }} jobs booked.\n\n{{ $json.list }}\n\nChanges go in the Jobs sheet: https://docs.google.com/spreadsheets/d/1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s/edit",
+    "options": {
+     "appendAttribution": false,
+     "senderName": "Morning Job List"
+    }
+   },
+   "id": "s4",
+   "name": "Email the Owner",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [
+    780,
+    0
+   ],
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "avT0HSTU0k73ksRU",
+     "name": "Gmail (OwnerAutomate)"
+    }
+   }
+  }
+ ],
+ "connections": {
+  "Weekdays 7am": {
+   "main": [
+    [
+     {
+      "node": "Read Jobs",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Jobs": {
+   "main": [
+    [
+     {
+      "node": "Today's Jobs",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Today's Jobs": {
+   "main": [
+    [
+     {
+      "node": "Email the Owner",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1",
+  "timezone": "America/New_York"
+ }
+}

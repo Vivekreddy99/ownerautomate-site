@@ -1,0 +1,154 @@
+{
+ "name": "Ep30 - Schedule Recipes (copy one)",
+ "nodes": [
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "days",
+       "daysInterval": 1,
+       "triggerAtHour": 7,
+       "triggerAtMinute": 0
+      }
+     ]
+    }
+   },
+   "id": "r1",
+   "name": "Every Day 7am",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    0,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "weeks",
+       "weeksInterval": 1,
+       "triggerAtDay": [
+        1
+       ],
+       "triggerAtHour": 8,
+       "triggerAtMinute": 0
+      }
+     ]
+    }
+   },
+   "id": "r2",
+   "name": "Mondays 8am",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    0,
+    200
+   ]
+  },
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "hours",
+       "hoursInterval": 1,
+       "triggerAtMinute": 15
+      }
+     ]
+    }
+   },
+   "id": "r3",
+   "name": "Every Hour at :15",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    0,
+    400
+   ]
+  },
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "cronExpression",
+       "expression": "*/15 8-17 * * 1-5"
+      }
+     ]
+    }
+   },
+   "id": "r4",
+   "name": "Every 15 min, 8 to 5",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    0,
+    600
+   ]
+  },
+  {
+   "parameters": {},
+   "id": "r5",
+   "name": "Your Steps Here",
+   "type": "n8n-nodes-base.noOp",
+   "typeVersion": 1,
+   "position": [
+    360,
+    300
+   ]
+  }
+ ],
+ "connections": {
+  "Every Day 7am": {
+   "main": [
+    [
+     {
+      "node": "Your Steps Here",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Mondays 8am": {
+   "main": [
+    [
+     {
+      "node": "Your Steps Here",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Every Hour at :15": {
+   "main": [
+    [
+     {
+      "node": "Your Steps Here",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Every 15 min, 8 to 5": {
+   "main": [
+    [
+     {
+      "node": "Your Steps Here",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1",
+  "timezone": "America/New_York"
+ }
+}
