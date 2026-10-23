@@ -1,0 +1,249 @@
+{
+ "name": "Ep31 - Instant Cleaning Quote (form to price to inbox)",
+ "nodes": [
+  {
+   "parameters": {
+    "formTitle": "Get your cleaning price now",
+    "formDescription": "Bright Home Cleaning, Raleigh. Answer four questions and your price is on this screen and in your inbox in seconds.",
+    "formFields": {
+     "values": [
+      {
+       "fieldLabel": "Your name",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Email",
+       "fieldType": "email",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Bedrooms",
+       "fieldType": "number",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Bathrooms",
+       "fieldType": "number",
+       "requiredField": true
+      },
+      {
+       "fieldLabel": "Anything extra?",
+       "placeholder": "deep clean, oven, fridge, windows"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "q1",
+   "name": "Quote Request",
+   "type": "n8n-nodes-base.formTrigger",
+   "typeVersion": 2.2,
+   "position": [
+    0,
+    0
+   ],
+   "webhookId": "ep31-cleaning-quote"
+  },
+  {
+   "parameters": {
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s"
+    },
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Prices"
+    },
+    "options": {}
+   },
+   "id": "q2",
+   "name": "Read Price List",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.5,
+   "position": [
+    240,
+    0
+   ],
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "sHiSaOHdDzOZoxnx",
+     "name": "Google Sheets (OwnerAutomate)"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "jsCode": "// 1. The price list from the sheet, by keyword: base, bedroom, deep, oven...\nconst price = {};\nfor (const row of $input.all()) price[row.json.keyword] = Number(row.json.price);\n\n// 2. The customer's answers from the form\nconst form = $('Quote Request').first().json;\nconst beds = Number(form['Bedrooms']) || 0;\nconst baths = Number(form['Bathrooms']) || 0;\nconst asked = String(form['Anything extra?'] || '').toLowerCase();\n\n// 3. Add it up, line by line\nconst lines = [\n  ['Base visit', price.base],\n  [`${beds} bedroom${beds === 1 ? '' : 's'}`, beds * price.bedroom],\n  [`${baths} bathroom${baths === 1 ? '' : 's'}`, baths * price.bathroom],\n];\nconst fixed = ['base', 'bedroom', 'bathroom', 'minimum'];\nfor (const { json: row } of $input.all()) {\n  if (!fixed.includes(row.keyword) && asked.includes(row.keyword)) lines.push([row.item, Number(row.price)]);\n}\nconst sum = lines.reduce((total, [, amount]) => total + amount, 0);\nconst extras = lines.slice(3).map(([item]) => item).join(', ') || 'none';\n\n// 4. Never below the minimum charge\nconst total = Math.max(sum, price.minimum);\nif (total > sum) lines.push(['Minimum charge top-up', total - sum]);\n\nreturn [{ json: {\n  quote: 'Q-' + $now.toFormat('MMdd-HHmm'),\n  name: form['Your name'],\n  email: form['Email'],\n  beds, baths,\n  extras,\n  breakdown: lines.map(([item, amount]) => `${item}: $${amount}`).join('\\n'),\n  total,\n  price: '$' + total,\n  valid_until: $now.plus({ days: 14 }).toFormat('d LLLL'),\n  received: $now.toFormat('yyyy-MM-dd HH:mm'),\n} }];"
+   },
+   "id": "q3",
+   "name": "Price the Job",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    480,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "documentId": {
+     "__rl": true,
+     "mode": "id",
+     "value": "1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s"
+    },
+    "sheetName": {
+     "__rl": true,
+     "mode": "name",
+     "value": "Quotes"
+    },
+    "columns": {
+     "mappingMode": "defineBelow",
+     "value": {
+      "Received": "={{ $json.received }}",
+      "Quote": "={{ $json.quote }}",
+      "Name": "={{ $json.name }}",
+      "Email": "={{ $json.email }}",
+      "Bedrooms": "={{ $json.beds }}",
+      "Bathrooms": "={{ $json.baths }}",
+      "Extras": "={{ $json.extras }}",
+      "Total": "={{ $json.total }}",
+      "Status": "Quote sent"
+     },
+     "matchingColumns": [],
+     "schema": [
+      {"id": "Received", "displayName": "Received", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Quote", "displayName": "Quote", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Name", "displayName": "Name", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Email", "displayName": "Email", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Bedrooms", "displayName": "Bedrooms", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Bathrooms", "displayName": "Bathrooms", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Extras", "displayName": "Extras", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Total", "displayName": "Total", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Status", "displayName": "Status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false}
+     ]
+    },
+    "options": {}
+   },
+   "id": "q4",
+   "name": "Log the Quote",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.5,
+   "position": [
+    720,
+    0
+   ],
+   "credentials": {
+    "googleSheetsOAuth2Api": {
+     "id": "sHiSaOHdDzOZoxnx",
+     "name": "Google Sheets (OwnerAutomate)"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "sendTo": "={{ $('Price the Job').item.json.email }}",
+    "subject": "=Your cleaning price: {{ $('Price the Job').item.json.price }} ({{ $('Price the Job').item.json.quote }})",
+    "emailType": "text",
+    "message": "=Hi {{ $('Price the Job').item.json.name }}, your cleaning price is {{ $('Price the Job').item.json.price }}. Here is how it adds up:\n\n{{ $('Price the Job').item.json.breakdown }}\n\nTotal: {{ $('Price the Job').item.json.price }}\n\nThis price is fixed for the home you described and holds until {{ $('Price the Job').item.json.valid_until }}. If the home is bigger than described, we tell you before we start, never after.\n\nTo book, reply to this email with a day that suits you and we will confirm by phone within one working day.\n\nBright Home Cleaning, Raleigh\nQuote {{ $('Price the Job').item.json.quote }}",
+    "options": {
+     "appendAttribution": false,
+     "senderName": "Bright Home Cleaning"
+    }
+   },
+   "id": "q5",
+   "name": "Email the Quote",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [
+    960,
+    0
+   ],
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "avT0HSTU0k73ksRU",
+     "name": "Gmail (OwnerAutomate)"
+    }
+   }
+  },
+  {
+   "parameters": {
+    "operation": "completion",
+    "completionTitle": "=Your price: {{ $('Price the Job').item.json.price }}",
+    "completionMessage": "=Thanks {{ $('Price the Job').item.json.name }}. The full breakdown is in your inbox now. Reply to that email to book.",
+    "options": {}
+   },
+   "id": "q6",
+   "name": "Price on Screen",
+   "type": "n8n-nodes-base.form",
+   "typeVersion": 1,
+   "position": [
+    1200,
+    0
+   ]
+  }
+ ],
+ "connections": {
+  "Quote Request": {
+   "main": [
+    [
+     {
+      "node": "Read Price List",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Read Price List": {
+   "main": [
+    [
+     {
+      "node": "Price the Job",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Price the Job": {
+   "main": [
+    [
+     {
+      "node": "Log the Quote",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Log the Quote": {
+   "main": [
+    [
+     {
+      "node": "Email the Quote",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Email the Quote": {
+   "main": [
+    [
+     {
+      "node": "Price on Screen",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1",
+  "timezone": "America/New_York"
+ }
+}

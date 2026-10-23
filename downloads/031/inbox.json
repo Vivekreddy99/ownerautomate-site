@@ -1,0 +1,57 @@
+{
+ "name": "Ep31 - Check the Customer's Inbox",
+ "nodes": [
+  {
+   "parameters": {},
+   "id": "i1",
+   "name": "Click to Check",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [
+    0,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "operation": "getAll",
+    "limit": 2,
+    "simple": true,
+    "filters": {
+     "q": "subject:\"Your cleaning price\" newer_than:1d"
+    },
+    "options": {}
+   },
+   "id": "i2",
+   "name": "Customer's Inbox",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [
+    260,
+    0
+   ],
+   "credentials": {
+    "gmailOAuth2": {
+     "id": "avT0HSTU0k73ksRU",
+     "name": "Gmail (OwnerAutomate)"
+    }
+   }
+  }
+ ],
+ "connections": {
+  "Click to Check": {
+   "main": [
+    [
+     {
+      "node": "Customer's Inbox",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "settings": {
+  "executionOrder": "v1"
+ }
+}
