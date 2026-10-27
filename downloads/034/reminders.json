@@ -1,0 +1,88 @@
+{
+ "name": "Ep34 - Day-Before Reservation Reminders",
+ "nodes": [
+  {
+   "parameters": {
+    "rule": {"interval": [{"triggerAtHour": 10}]}
+   },
+   "id": "m1",
+   "name": "Every Day at 10 AM",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [0, 0]
+  },
+  {
+   "parameters": {
+    "documentId": {"__rl": true, "mode": "id", "value": "1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s"},
+    "sheetName": {"__rl": true, "mode": "name", "value": "Bookings"},
+    "options": {}
+   },
+   "id": "m2",
+   "name": "Read Bookings",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.5,
+   "position": [240, 0],
+   "credentials": {"googleSheetsOAuth2Api": {"id": "sHiSaOHdDzOZoxnx", "name": "Google Sheets (OwnerAutomate)"}}
+  },
+  {
+   "parameters": {
+    "jsCode": "// Your n8n address: the guest's two buttons open the Guest Reply webhook\nconst REPLY_URL = 'http://127.0.0.1:5678/webhook/ep34-reply';\n\n// 1. Tomorrow's date, in the restaurant's time zone (workflow settings)\nconst tomorrow = $now.plus({ days: 1 }).toFormat('yyyy-MM-dd');\n\n// 2. Tables booked for tomorrow that have not had a reminder yet\nconst due = $input.all().map(item => item.json)\n  .filter(b => b.Date === tomorrow && b.Status === 'Booked' && !b.Reminded && b.Email);\n\n// 3. One email per table, each with a confirm link and a cancel link\nreturn due.map(b => ({ json: {\n  booking: b.Booking,\n  name: b.Name,\n  email: b.Email,\n  party: b.Party,\n  time: b.Time,\n  day: DateTime.fromISO(b.Date).toFormat('cccc d LLLL'),\n  confirm: `${REPLY_URL}?b=${b.Booking}&a=confirm`,\n  cancel: `${REPLY_URL}?b=${b.Booking}&a=cancel`,\n} }));"
+   },
+   "id": "m3",
+   "name": "Due for Reminder",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [480, 0]
+  },
+  {
+   "parameters": {
+    "sendTo": "={{ $json.email }}",
+    "subject": "=Tomorrow at {{ $json.time }}: your table for {{ $json.party }} at Rosa's",
+    "emailType": "html",
+    "message": "=<p>Hi {{ $json.name }},</p><p>Your table for {{ $json.party }} at Rosa's Trattoria is booked for <b>{{ $json.day }} at {{ $json.time }}</b>.</p><p>Are you still coming? One tap tells us.</p><p><a href=\"{{ $json.confirm }}\" style=\"display:inline-block;padding:12px 22px;background:#2e7d4f;color:#fff;text-decoration:none;border-radius:6px\">Yes, we're coming</a> &nbsp; <a href=\"{{ $json.cancel }}\" style=\"display:inline-block;padding:12px 22px;background:#9a3b2e;color:#fff;text-decoration:none;border-radius:6px\">Cancel my table</a></p><p>Plans changed? Cancelling now lets us give the table to someone on our waitlist. Thank you.</p><p>Rosa's Trattoria, Columbus</p>",
+    "options": {"appendAttribution": false, "senderName": "Rosa's Trattoria"}
+   },
+   "id": "m4",
+   "name": "Send Reminder",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [720, 0],
+   "credentials": {"gmailOAuth2": {"id": "avT0HSTU0k73ksRU", "name": "Gmail (OwnerAutomate)"}}
+  },
+  {
+   "parameters": {
+    "operation": "update",
+    "documentId": {"__rl": true, "mode": "id", "value": "1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s"},
+    "sheetName": {"__rl": true, "mode": "name", "value": "Bookings"},
+    "columns": {
+     "mappingMode": "defineBelow",
+     "value": {
+      "Booking": "={{ $('Due for Reminder').item.json.booking }}",
+      "Status": "Reminded",
+      "Reminded": "={{ $now.toFormat('yyyy-MM-dd HH:mm') }}"
+     },
+     "matchingColumns": ["Booking"],
+     "schema": [
+      {"id": "Booking", "displayName": "Booking", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Status", "displayName": "Status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Reminded", "displayName": "Reminded", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false}
+     ]
+    },
+    "options": {"cellFormat": "RAW"}
+   },
+   "id": "m5",
+   "name": "Mark Reminded",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.5,
+   "position": [960, 0],
+   "credentials": {"googleSheetsOAuth2Api": {"id": "sHiSaOHdDzOZoxnx", "name": "Google Sheets (OwnerAutomate)"}}
+  }
+ ],
+ "connections": {
+  "Every Day at 10 AM": {"main": [[{"node": "Read Bookings", "type": "main", "index": 0}]]},
+  "Read Bookings": {"main": [[{"node": "Due for Reminder", "type": "main", "index": 0}]]},
+  "Due for Reminder": {"main": [[{"node": "Send Reminder", "type": "main", "index": 0}]]},
+  "Send Reminder": {"main": [[{"node": "Mark Reminded", "type": "main", "index": 0}]]}
+ },
+ "settings": {"executionOrder": "v1", "timezone": "America/New_York"}
+}

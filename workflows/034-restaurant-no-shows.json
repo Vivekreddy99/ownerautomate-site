@@ -1,0 +1,191 @@
+{
+ "name": "Ep34 - Restaurant Bookings and Guest Replies",
+ "nodes": [
+  {
+   "parameters": {
+    "formTitle": "Book a table at Rosa's Trattoria",
+    "formDescription": "Rosa's Trattoria, Columbus. We email you the day before so you can confirm or cancel in one tap.",
+    "formFields": {
+     "values": [
+      {"fieldLabel": "Your name", "requiredField": true},
+      {"fieldLabel": "Email", "fieldType": "email", "requiredField": true},
+      {"fieldLabel": "Party size", "fieldType": "number", "requiredField": true},
+      {"fieldLabel": "Date", "fieldType": "date", "requiredField": true},
+      {"fieldLabel": "Time", "placeholder": "7:30 PM", "requiredField": true}
+     ]
+    },
+    "options": {}
+   },
+   "id": "b1",
+   "name": "Booking Form",
+   "type": "n8n-nodes-base.formTrigger",
+   "typeVersion": 2.2,
+   "position": [0, 0],
+   "webhookId": "ep34-book-a-table"
+  },
+  {
+   "parameters": {
+    "jsCode": "// One row for the Bookings tab, from the form answers\nconst f = $input.first().json;\nreturn [{ json: {\n  Booking: 'R-' + $now.toFormat('MMddHHmmss'),\n  Booked: $now.toFormat('yyyy-MM-dd HH:mm'),\n  Name: f['Your name'],\n  Email: f['Email'],\n  Party: Number(f['Party size']),\n  Date: f['Date'],\n  Time: f['Time'],\n  Status: 'Booked',\n  Reminded: '',\n  Replied: '',\n} }];"
+   },
+   "id": "b2",
+   "name": "New Booking",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [240, 0]
+  },
+  {
+   "parameters": {
+    "operation": "append",
+    "documentId": {"__rl": true, "mode": "id", "value": "1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s"},
+    "sheetName": {"__rl": true, "mode": "name", "value": "Bookings"},
+    "columns": {"mappingMode": "autoMapInputData", "value": {}, "matchingColumns": [], "schema": []},
+    "options": {"cellFormat": "RAW"}
+   },
+   "id": "b3",
+   "name": "Save Booking",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.5,
+   "position": [480, 0],
+   "credentials": {"googleSheetsOAuth2Api": {"id": "sHiSaOHdDzOZoxnx", "name": "Google Sheets (OwnerAutomate)"}}
+  },
+  {
+   "parameters": {
+    "operation": "completion",
+    "completionTitle": "=Table booked for {{ $('New Booking').item.json.Party }}",
+    "completionMessage": "=Thanks {{ $('New Booking').item.json.Name }}. See you {{ $('New Booking').item.json.Date }} at {{ $('New Booking').item.json.Time }}. We will email you the day before so you can confirm or cancel in one tap. Booking {{ $('New Booking').item.json.Booking }}.",
+    "options": {}
+   },
+   "id": "b4",
+   "name": "Booked Page",
+   "type": "n8n-nodes-base.form",
+   "typeVersion": 1,
+   "position": [720, 0]
+  },
+  {
+   "parameters": {
+    "path": "ep34-reply",
+    "responseMode": "responseNode",
+    "options": {}
+   },
+   "id": "r1",
+   "name": "Guest Reply",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [0, 300],
+   "webhookId": "ep34-reply"
+  },
+  {
+   "parameters": {
+    "documentId": {"__rl": true, "mode": "id", "value": "1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s"},
+    "sheetName": {"__rl": true, "mode": "name", "value": "Bookings"},
+    "filtersUI": {"values": [{"lookupColumn": "Booking", "lookupValue": "={{ $json.query.b }}"}]},
+    "options": {}
+   },
+   "id": "r2",
+   "name": "Find Booking",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.5,
+   "position": [220, 300],
+   "alwaysOutputData": true,
+   "credentials": {"googleSheetsOAuth2Api": {"id": "sHiSaOHdDzOZoxnx", "name": "Google Sheets (OwnerAutomate)"}}
+  },
+  {
+   "parameters": {
+    "jsCode": "// 1. Which button the guest tapped: ?b=R-2041&a=confirm or a=cancel\nconst q = $('Guest Reply').first().json.query;\nconst b = $input.first().json;\nconst cancel = q.a === 'cancel';\n\n// 2. The new status for that row\nconst status = cancel ? 'Cancelled' : 'Confirmed';\nconst day = b.Date ? DateTime.fromISO(b.Date).toFormat('cccc d LLLL') : '';\n\n// 3. The sentence the guest sees after the tap\nlet page = 'We could not find that booking. Please call us and we will sort it out.';\nif (b.Booking && cancel) page = `Thanks ${b.Name}. Your table for ${b.Party} on ${day} at ${b.Time} is cancelled. We hope to see you another time.`;\nif (b.Booking && !cancel) page = `Thanks ${b.Name}. Your table for ${b.Party} on ${day} at ${b.Time} is confirmed. See you then.`;\n\nreturn [{ json: {\n  found: Boolean(b.Booking),\n  Booking: b.Booking || q.b,\n  Status: status,\n  Replied: $now.toFormat('yyyy-MM-dd HH:mm'),\n  name: b.Name, party: b.Party, time: b.Time, day,\n  heading: !b.Booking ? 'Booking not found' : cancel ? 'Table cancelled' : 'Table confirmed',\n  page,\n} }];"
+   },
+   "id": "r3",
+   "name": "Read the Reply",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [440, 300]
+  },
+  {
+   "parameters": {
+    "operation": "update",
+    "documentId": {"__rl": true, "mode": "id", "value": "1PnZPMQ0HL8fnU0Kd5x6GahTqRzaKjW6WL-gmVAWtx2s"},
+    "sheetName": {"__rl": true, "mode": "name", "value": "Bookings"},
+    "columns": {
+     "mappingMode": "defineBelow",
+     "value": {
+      "Booking": "={{ $json.Booking }}",
+      "Status": "={{ $json.Status }}",
+      "Replied": "={{ $json.Replied }}"
+     },
+     "matchingColumns": ["Booking"],
+     "schema": [
+      {"id": "Booking", "displayName": "Booking", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Status", "displayName": "Status", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false},
+      {"id": "Replied", "displayName": "Replied", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true, "removed": false}
+     ]
+    },
+    "options": {"cellFormat": "RAW"}
+   },
+   "id": "r4",
+   "name": "Update Booking",
+   "type": "n8n-nodes-base.googleSheets",
+   "typeVersion": 4.5,
+   "position": [660, 300],
+   "onError": "continueRegularOutput",
+   "credentials": {"googleSheetsOAuth2Api": {"id": "sHiSaOHdDzOZoxnx", "name": "Google Sheets (OwnerAutomate)"}}
+  },
+  {
+   "parameters": {
+    "respondWith": "text",
+    "responseBody": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Rosa's Trattoria</title></head><body style=\"margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f6f1ea;font-family:Georgia,serif;color:#2b2420\"><div style=\"max-width:760px;margin:40px;padding:64px 72px;background:#fff;border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,.08);text-align:center\"><div style=\"font-size:22px;letter-spacing:.18em;text-transform:uppercase;color:#9a3b2e\">Rosa's Trattoria, Columbus</div><h1 style=\"font-size:56px;margin:24px 0\">{{ $('Read the Reply').item.json.heading }}</h1><p style=\"font-size:30px;line-height:1.5;margin:0\">{{ $('Read the Reply').item.json.page }}</p><p style=\"font-size:20px;color:#8a7f76;margin-top:36px\">Booking {{ $('Read the Reply').item.json.Booking }}</p></div></body></html>",
+    "options": {
+     "responseHeaders": {"entries": [{"name": "Content-Type", "value": "text/html; charset=utf-8"}]}
+    }
+   },
+   "id": "r5",
+   "name": "Reply Page",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [880, 300]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2},
+     "conditions": [
+      {"id": "c1", "leftValue": "={{ $('Read the Reply').item.json.Status }}", "rightValue": "Cancelled", "operator": {"type": "string", "operation": "equals"}},
+      {"id": "c2", "leftValue": "={{ $('Read the Reply').item.json.found }}", "rightValue": true, "operator": {"type": "boolean", "operation": "true", "singleValue": true}}
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   },
+   "id": "r6",
+   "name": "Cancelled?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [1100, 300]
+  },
+  {
+   "parameters": {
+    "sendTo": "hello@ownerautomate.com",
+    "subject": "=Table free: {{ $('Read the Reply').item.json.party }} at {{ $('Read the Reply').item.json.time }}, {{ $('Read the Reply').item.json.day }}",
+    "emailType": "text",
+    "message": "={{ $('Read the Reply').item.json.name }} just cancelled booking {{ $('Read the Reply').item.json.Booking }}: a table for {{ $('Read the Reply').item.json.party }} on {{ $('Read the Reply').item.json.day }} at {{ $('Read the Reply').item.json.time }}.\n\nThe table is free again. Offer it to the waitlist or open it online.",
+    "options": {"appendAttribution": false, "senderName": "Rosa's Booking Bot"}
+   },
+   "id": "r7",
+   "name": "Tell the Host",
+   "type": "n8n-nodes-base.gmail",
+   "typeVersion": 2.1,
+   "position": [1320, 200],
+   "credentials": {"gmailOAuth2": {"id": "avT0HSTU0k73ksRU", "name": "Gmail (OwnerAutomate)"}}
+  }
+ ],
+ "connections": {
+  "Booking Form": {"main": [[{"node": "New Booking", "type": "main", "index": 0}]]},
+  "New Booking": {"main": [[{"node": "Save Booking", "type": "main", "index": 0}]]},
+  "Save Booking": {"main": [[{"node": "Booked Page", "type": "main", "index": 0}]]},
+  "Guest Reply": {"main": [[{"node": "Find Booking", "type": "main", "index": 0}]]},
+  "Find Booking": {"main": [[{"node": "Read the Reply", "type": "main", "index": 0}]]},
+  "Read the Reply": {"main": [[{"node": "Update Booking", "type": "main", "index": 0}]]},
+  "Update Booking": {"main": [[{"node": "Reply Page", "type": "main", "index": 0}]]},
+  "Reply Page": {"main": [[{"node": "Cancelled?", "type": "main", "index": 0}]]},
+  "Cancelled?": {"main": [[{"node": "Tell the Host", "type": "main", "index": 0}], []]}
+ },
+ "settings": {"executionOrder": "v1", "timezone": "America/New_York"}
+}
