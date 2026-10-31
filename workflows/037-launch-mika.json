@@ -1,0 +1,35 @@
+{
+ "name": "OA 037 - Mika verdict",
+ "nodes": [
+  {
+   "parameters": {},
+   "id": "a37-trigger",
+   "name": "Run",
+   "type": "n8n-nodes-base.manualTrigger",
+   "typeVersion": 1,
+   "position": [0, 0]
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {"id": "v1", "name": "tool", "value": "Mika (github.com/wangzan101/Mika)", "type": "string"},
+      {"id": "v2", "name": "verdict", "value": "Worth a test on a spare Android 14 phone with a cheap model key: scheduled checks, chat summaries, lookups. Not yet on the phone that runs your business accounts: Ask mode sends messages without asking and account bans are possible.", "type": "string"},
+      {"id": "v3", "name": "cost", "value": "App free (Apache-2.0). You pay your model provider, or use a ChatGPT/xAI/OpenRouter sign-in or a local model.", "type": "string"},
+      {"id": "v4", "name": "install", "value": "Install the APK from GitHub Releases, pair wireless debugging once in the setup wizard, add a model. Android 12+ for app control, 14+ recommended.", "type": "string"}
+     ]
+    },
+    "options": {}
+   },
+   "id": "a37-verdict",
+   "name": "Verdict",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [260, 0]
+  }
+ ],
+ "connections": {
+  "Run": {"main": [[{"node": "Verdict", "type": "main", "index": 0}]]}
+ },
+ "settings": {"executionOrder": "v1"}
+}
